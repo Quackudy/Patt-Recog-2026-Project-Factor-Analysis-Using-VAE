@@ -1,0 +1,53 @@
+# Byte-compiled / cached
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Virtual environments
+.venv/
+env/
+venv/
+pip-wheel-metadata/
+*.egg-info/
+
+# Python packaging
+build/
+dist/
+*.egg
+*.whl
+
+# uv / poetry / other lock/temp
+uv.lock
+.venv/
+
+# VS Code
+.vscode/
+
+# OS-specific
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# MLflow local db/artifacts
+mlflow.db
+mlruns/
+
+# dataset, trained models and large output
+data/*
+!data/.gitkeep
+best_models/*
+!best_models/.gitkeep
+
+# logs
+*.log
+
+# IDE & editor
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Optional user settings
+*.env
+*.local
