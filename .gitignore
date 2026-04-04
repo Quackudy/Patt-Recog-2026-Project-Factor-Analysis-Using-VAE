@@ -32,7 +32,9 @@ desktop.ini
 
 # MLflow local db/artifacts
 mlflow.db
+mlruns.db
 mlruns/
+model_tracking
 
 # dataset, trained models and large output
 data/*
