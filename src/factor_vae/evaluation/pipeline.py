@@ -59,12 +59,17 @@ def run_evaluation(
         select_feature=data_cfg.get("select_feature"),
     )
 
-    scores = generate_prediction_scores(
-        model,
-        test_dataloader,
-        test_dataloader.dataset,
-        seq_len,
-        logger=log,
-    )
-    merged = pd.merge(scores, dataset["LABEL0"], right_index=True, left_index=True)
-    return compute_metrics(merged)
+    test_ds = test_dataloader.dataset
+    try:
+        scores = generate_prediction_scores(
+            model,
+            test_dataloader,
+            test_ds,
+            seq_len,
+            logger=log,
+        )
+        merged = pd.merge(scores, dataset["LABEL0"], right_index=True, left_index=True)
+        return compute_metrics(merged)
+    finally:
+        del test_dataloader
+        test_ds.cleanup()

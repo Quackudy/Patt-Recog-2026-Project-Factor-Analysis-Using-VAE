@@ -1,12 +1,11 @@
 import logging
-from typing import TYPE_CHECKING
+
 
 import pandas as pd
 import torch
 from tqdm import tqdm
 
-if TYPE_CHECKING:
-    import torch.nn as nn
+import torch.nn as nn
 
 _LOG = logging.getLogger(__name__)
 

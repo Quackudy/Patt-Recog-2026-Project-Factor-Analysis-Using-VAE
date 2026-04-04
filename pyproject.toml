@@ -31,3 +31,13 @@ where = ["src"]
 [project.scripts]
 factor-vae-train = "scripts.main:main"
 factor-vae-eval = "scripts.run_evaluation:main"
+
+[project.optional-dependencies]
+viz = [
+    "graphviz>=0.20",
+    "jupyter>=1.1.0",
+    "matplotlib>=3.8.0",
+    "notebook>=7.0.0",
+    "torchinfo>=1.8.0",
+    "torchview>=0.2.6",
+]

@@ -40,6 +40,9 @@ data/*
 best_models/*
 !best_models/.gitkeep
 
+# Notebook graphviz output
+notebooks/_graph_out/
+
 # logs
 *.log
 

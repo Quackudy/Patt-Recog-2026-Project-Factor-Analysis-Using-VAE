@@ -20,13 +20,13 @@ class TSDataSampler:
         self.data = data.sort_index()
 
         # ── 1. Pre-fill and put data_arr in shared memory ─────────────────────
-        print("Pre-processing dataset (ffill)...")
         temp_df  = self.data.groupby(level='instrument').ffill().fillna(0)
         raw_arr  = temp_df.to_numpy(dtype=np.float32)
         raw_arr  = np.vstack([raw_arr, np.zeros((1, raw_arr.shape[1]), dtype=np.float32)])
         self.nan_idx = len(raw_arr) - 1          # sentinel row index
 
         self._data_shm, self.data_arr = _to_shm(raw_arr)
+        self._shm_creator = True
         del raw_arr
 
         # ── 2. Build index without iterrows ───────────────────────────────────
@@ -74,24 +74,44 @@ class TSDataSampler:
         state['data_arr'] = _shm_desc(self._data_shm, self.data_arr)
         state['idx_arr']  = _shm_desc(self._idx_shm,  self.idx_arr)
         del state['_data_shm'], state['_idx_shm']
+        # Workers re-attach via _from_shm(create=False); they must not unlink.
+        state.pop('_shm_creator', None)
         return state
 
     def __setstate__(self, state):
         data_desc = state.pop('data_arr')
         idx_desc  = state.pop('idx_arr')
         self.__dict__.update(state)
+        self._shm_creator = False
         self._data_shm, self.data_arr = _from_shm(data_desc)
         self._idx_shm,  self.idx_arr  = _from_shm(idx_desc)
 
     def cleanup(self):
-        for shm in (self._data_shm, self._idx_shm):
-            try: shm.close(); shm.unlink()
-            except Exception: pass
+        """Close this process's SHM handles; unlink only in the creator process."""
+        creator = getattr(self, '_shm_creator', False)
+        for name in ('_data_shm', '_idx_shm'):
+            shm = getattr(self, name, None)
+            if shm is None:
+                continue
+            try:
+                shm.close()
+            except Exception:
+                pass
+            if creator:
+                try:
+                    shm.unlink()
+                except Exception:
+                    pass
+            setattr(self, name, None)
+        self._shm_creator = False
+        self.data_arr = None
+        self.idx_arr = None
 
     def __del__(self):
-        for attr in ('_data_shm', '_idx_shm'):
-            try: getattr(self, attr).close()
-            except Exception: pass
+        try:
+            self.cleanup()
+        except Exception:
+            pass
 
     # ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -196,6 +216,9 @@ class TSDatasetH(Dataset):
     def __getitem__(self, idx): return self.sampler[idx]
     def __len__(self):          return len(self.sampler)
 
+    def cleanup(self):
+        self.sampler.cleanup()
+
 
 class DateGroupedBatchSampler(Sampler):
     def __init__(self, data_source, shuffle=False):
@@ -249,8 +272,12 @@ if __name__ == "__main__":
     data_loader = init_data_loader(df, step_len,
                                    shuffle=False, start='2010-01-01', end='2015-01-01',
                                    select_feature=None)
-
-    for batch, indices in data_loader:
-        input_data, labels = batch[:, :, :-1], batch[:, -1, -1].unsqueeze(-1)
-        print(input_data.shape, labels.shape)
+    ds = data_loader.dataset
+    try:
+        for batch, indices in data_loader:
+            input_data, labels = batch[:, :, :-1], batch[:, -1, -1].unsqueeze(-1)
+            print(input_data.shape, labels.shape)
+    finally:
+        del data_loader
+        ds.cleanup()
     print("Done")

@@ -3,16 +3,29 @@
 from __future__ import annotations
 
 import logging
-import os
-
+import yaml
+from pathlib import Path
 from colorlog import ColoredFormatter
 
 
 def _resolve_level() -> int:
-    for key in ("FACTOR_VAE_LOG_LEVEL", "LOGLEVEL"):
-        raw = os.environ.get(key)
-        if raw:
-            return getattr(logging, raw.upper(), logging.INFO)
+
+    config_path = Path("config.yaml")
+    if not config_path.exists():
+        raise FileNotFoundError(
+            f"Config file not found at {config_path.absolute()}"
+        )
+    with open(config_path, encoding="utf-8") as f:
+        config = yaml.safe_load(f)
+
+    level_name = config.get("log_level", "INFO")
+
+    if isinstance(level_name, str):
+        return getattr(logging, level_name.upper(), logging.INFO)
+    
+    if isinstance(level_name, int):
+        return level_name
+
     return logging.INFO
 
 

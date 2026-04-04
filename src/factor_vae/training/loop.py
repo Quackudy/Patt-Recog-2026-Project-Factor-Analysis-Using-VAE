@@ -1,8 +1,17 @@
+from collections.abc import Callable
+
 import torch
 from tqdm.auto import tqdm
 
 
-def train(factor_model, dataloader, optimizer, scheduler, device):
+def train(
+    factor_model,
+    dataloader,
+    optimizer,
+    device,
+    *,
+    after_optimizer_step: Callable[[], None] | None = None,
+):
     factor_model.to(device)
     factor_model.train()
     total_loss = 0
@@ -23,8 +32,8 @@ def train(factor_model, dataloader, optimizer, scheduler, device):
             total_loss += loss.item()
             loss.backward()
             optimizer.step()
-            if scheduler is not None:
-                scheduler.step()
+            if after_optimizer_step is not None:
+                after_optimizer_step()
             pbar.set_postfix({"batch_loss": loss.item()})
             pbar.update(1)
 

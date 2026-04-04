@@ -1,18 +1,32 @@
+log_level: "INFO"
+
 # config.yaml
 training:
-  num_epochs: 10
-  lr: 0.0001
+  num_epochs: 20
+  lr: 0.0002
   val_interval: 1
   seed: 42
-  run_name: "VAE-Revision2"
+  run_name: "increaseLR"
   save_dir: "./best_models"
   device: null  # Will be auto-set to 'cuda' or 'cpu'
+  # Optional (defaults: adam + cosine_step over all training steps, same as before)
+  optimizer:
+    name: adamw
+    weight_decay: 0.01
+  scheduler:
+    name: reduce_on_plateau
+    monitor: val_loss
+    mode: min
+    factor: 0.5
+    patience: 3
+  # Other schedulers: name cosine_epoch (T_max defaults to num_epochs); name none
 
 model:
   num_latent: 158
   num_portfolio: 128
   num_factor: 32
   hidden_size: 64
+
 
 data:
   dataset: "./data/sp500_data.pkl"
@@ -34,7 +48,6 @@ mlflow:
 test:
   model_dir: "./best_models"
   model_name: "VAE-Revision2_factor_32_hdn_64_port_128_seed_42.pt" 
-
 
 # Optional: Add overrides for different environments (e.g., dev/prod)
 # dev:

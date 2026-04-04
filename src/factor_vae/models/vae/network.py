@@ -123,12 +123,15 @@ class FactorDecoder(nn.Module):
 class AttentionLayer(nn.Module):
     def __init__(self, hidden_size):
         super(AttentionLayer, self).__init__()
-        
+
         self.query = nn.Parameter(torch.randn(hidden_size))
         self.key_layer = nn.Linear(hidden_size, hidden_size)
         self.value_layer = nn.Linear(hidden_size, hidden_size)
         self.dropout = nn.Dropout(0.1)
-    
+        # When True, last forward stores normalized attention weights (for notebooks / debugging).
+        self.capture_attention = False
+        self._last_attention_weights: torch.Tensor | None = None
+
     def forward(self, stock_latent):
         #* calculate attention weights
 
@@ -145,6 +148,9 @@ class AttentionLayer(nn.Module):
 
         weight_sum = attention_weights.sum() + 1e-6
         attention_weights = attention_weights / weight_sum  # normalize to sum=1
+
+        if self.capture_attention:
+            self._last_attention_weights = attention_weights.detach().clone()
 
         #! calculate context vector
         context_vector = torch.matmul(attention_weights, self.value)  # (H,)
@@ -163,6 +169,13 @@ class FactorPredictor(nn.Module):
         self.mu_layer = nn.Linear(hidden_size, 1)
         self.sigma_layer = nn.Linear(hidden_size, 1)
         self.softplus = nn.Softplus()
+
+    def set_attention_capture(self, enabled: bool) -> None:
+        """Enable storing attention weights on each ``AttentionLayer`` (for visualization)."""
+        for layer in self.attention_layers:
+            layer.capture_attention = enabled
+            if not enabled:
+                layer._last_attention_weights = None
 
     def forward(self, stock_latent):
         #! Take only stock latents as input (N, H)
