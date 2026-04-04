@@ -12,9 +12,10 @@ Minimal setup to train FactorVAE with config-based params.
 
 ## Run
 
-- `uv run factorVAE`
-- Or explicit:
-  - `uv run python scripts/main.py`
+- `uv run factor-vae-train`
+- `uv run factor-vae-eval`
+
+Run these from the repo root (where `config.yaml` lives). In code, import the library as `factor_vae` (for example `from factor_vae.training.pipeline import run_training`).
 
 ## Notes
 

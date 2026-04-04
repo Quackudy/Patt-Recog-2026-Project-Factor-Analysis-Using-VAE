@@ -24,7 +24,7 @@ data:
   val_end_time: "2018-12-31"
   test_start_time: "2018-01-01"
   test_end_time: "2018-06-30"
-  select_feature: null  # Add if needed from DataArgument
+  select_feature: null  # optional column subset for loaders
 
 mlflow:
   experiment: "FactorVAE"

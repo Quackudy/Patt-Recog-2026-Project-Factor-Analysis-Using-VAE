@@ -1,8 +1,9 @@
 [project]
-name = "factorVAE"
+name = "factor-vae"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
+    "scipy>=1.11.0",
     "mlflow>=3.10.1",
     "pandas>=2.3.3",
     "tqdm>=4.67.3",
@@ -28,5 +29,5 @@ where = ["src"]
 
 
 [project.scripts]
-factorVAE-train = "scripts.main:main"
-factorVAE-eval = "scripts.run_evaluation:main"
+factor-vae-train = "scripts.main:main"
+factor-vae-eval = "scripts.run_evaluation:main"
