@@ -29,9 +29,9 @@ where = ["src"]
 
 
 [project.scripts]
+factor-vae-makedata = "scripts.make_data:main"
 factor-vae-train = "scripts.main:main"
 factor-vae-eval = "scripts.run_evaluation:main"
-factor-vae-makedata = "scripts.make_data:main"
 
 [project.optional-dependencies]
 viz = [
