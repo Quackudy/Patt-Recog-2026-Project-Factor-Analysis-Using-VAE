@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any
 
 import pandas as pd
 import torch
+import os
 
 from factor_vae.data.dataset import init_data_loader
 from factor_vae.evaluation.metrics import compute_metrics
@@ -46,7 +47,24 @@ def run_evaluation(
     model.to(device)
     model.eval()
 
-    dataset = pd.read_pickle(data_cfg["dataset"]).iloc[:, :159]
+        
+    dataset_type = data_cfg.get("dataset")
+
+    if dataset_type == "US":
+        path = "data/processed/sp500_data.pkl"
+    elif dataset_type == "CN":
+        path = "data/processed/csi_data.pkl"
+    else:
+         raise ValueError(f"Invalid dataset type: {dataset_type}. Expected 'US' or 'CN'.")
+
+    if not os.path.exists(path):
+        raise FileNotFoundError(
+            f"Could not find the pickle file at: {os.path.abspath(path)}. "
+            "Make sure you ran the Qlib data generation script first!"
+        )
+
+    dataset = pd.read_pickle(path).iloc[:, :159]
+
     dataset.rename(columns={dataset.columns[-1]: "LABEL0"}, inplace=True)
 
     seq_len = data_cfg["seq_len"]

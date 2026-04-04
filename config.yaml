@@ -29,7 +29,7 @@ model:
 
 
 data:
-  dataset: "./data/sp500_data.pkl"
+  dataset: "US" # US (US is just US, i mean USA, okay) or CN (china)
   seq_len: 20
   num_workers: 2
   fit_start_time: "2009-01-01"

@@ -54,7 +54,24 @@ def run_training(config: Mapping, *, logger: logging.Logger | None = None) -> No
     model = build_factor_vae(model_cfg)
     log_network_profile(model, log, model_cfg=dict(model_cfg))
 
-    dataset = pd.read_pickle(data_cfg["dataset"]).iloc[:, :159]
+        
+    dataset_type = data_cfg.get("dataset")
+
+    if dataset_type == "US":
+        path = "data/processed/sp500_data.pkl"
+    elif dataset_type == "CN":
+        path = "data/processed/csi_data.pkl"
+    else:
+         raise ValueError(f"Invalid dataset type: {dataset_type}. Expected 'US' or 'CN'.")
+
+    if not os.path.exists(path):
+        raise FileNotFoundError(
+            f"Could not find the pickle file at: {os.path.abspath(path)}. "
+            "Make sure you ran the Qlib data generation script first!"
+        )
+
+    dataset = pd.read_pickle(path).iloc[:, :159]
+
     dataset.rename(columns={dataset.columns[-1]: "LABEL0"}, inplace=True)
 
     train_dataloader = init_data_loader(
