@@ -76,8 +76,7 @@ def main(config=None):
     factorVAE = FactorVAE(feature_extractor, factor_encoder, factor_decoder, factor_predictor)
     
     data_args = DataArgument(
-        start_time=data_cfg['start_time'],
-        end_time=data_cfg['end_time'],
+        fit_start_time=data_cfg['fit_start_time'],
         fit_end_time=data_cfg['fit_end_time'],
         val_start_time=data_cfg['val_start_time'],
         val_end_time=data_cfg['val_end_time'],
@@ -92,7 +91,7 @@ def main(config=None):
     train_dataloader = init_data_loader(dataset,
                                         shuffle=True,
                                         step_len=data_args.seq_len, 
-                                        start=data_args.start_time,
+                                        start=data_args.fit_start_time,
                                         end=data_args.fit_end_time, 
                                         num_workers=data_args.num_workers,
                                         select_feature=data_args.select_feature)
@@ -143,7 +142,7 @@ def main(config=None):
             "hidden_size":   model_cfg['hidden_size'],
             "num_workers":   data_args.num_workers,
             "seed":          training['seed'],
-            "start_time":    data_args.start_time,
+            "fit_start_time": data_args.fit_start_time,
             "fit_end_time":  data_args.fit_end_time,
             "val_start_time":data_args.val_start_time,
             "val_end_time":  data_args.val_end_time,
@@ -182,6 +181,6 @@ if __name__ == '__main__':
 
     try:
         main()
-    except Exception as e:
+    except Exception :
         logger.exception("Unhandled exception in FactorVAE main")
         raise

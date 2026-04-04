@@ -18,18 +18,29 @@ data:
   dataset: "./data/sp500_data.pkl"
   seq_len: 20
   num_workers: 2
-  start_time: "2009-01-01"
+  fit_start_time: "2009-01-01"
   fit_end_time: "2017-12-31"
   val_start_time: "2018-01-01"
   val_end_time: "2018-12-31"
-  end_time: "2020-12-31"
+  test_start_time: "2018-01-01"
+  test_end_time: "2018-06-30"
   select_feature: null  # Add if needed from DataArgument
 
 mlflow:
   experiment: "FactorVAE"
   tracking_uri: "sqlite:///model_tracking/mlflow.db"
 
+
+test:
+  model_dir: "./best_models"
+  model_name: "VAE-Revision2_factor_32_hdn_64_port_128_seed_42.pt" 
+
+
 # Optional: Add overrides for different environments (e.g., dev/prod)
 # dev:
 #   training:
 #     num_epochs: 1
+
+
+
+

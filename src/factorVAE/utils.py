@@ -22,13 +22,9 @@ class DataArgument:
         default='./data',
         metadata={"help": 'directory to save model'}
     )
-    start_time: str = field(
+    fit_start_time: str = field(
         default="2010-12-01",
-        metadata={"help": "start_time"}
-    )
-    end_time: str =field(
-        default='2020-12-31', 
-        metadata={"help": "end_time"}
+        metadata={"help": "fit_start_time"}
     )
 
     fit_end_time: str= field(
@@ -69,7 +65,7 @@ def load_model(args):
 
 
 @torch.no_grad()
-def generate_prediction_scores(model, test_dataloader, test_dataset, args):
+def generate_prediction_scores(model, test_dataloader, test_dataset, seq_len):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(device)
     model.to(device)
@@ -81,8 +77,8 @@ def generate_prediction_scores(model, test_dataloader, test_dataset, args):
         for i, (char_with_label, _) in enumerate(test_dataloader):
             # The dataset includes the label in the final feature column.
             char = char_with_label[:, :, :-1].to(device)
-            returns = char_with_label[:, :, -1].to(device)
-            if char.shape[1] != args.seq_length:
+            #returns = char_with_label[:, :, -1].to(device)
+            if char.shape[1] != seq_len:
                 print("unexpected seq length", char.shape)
                 continue
             predictions = model.prediction(char.float())
@@ -96,7 +92,6 @@ def generate_prediction_scores(model, test_dataloader, test_dataset, args):
 
 @dataclass
 class test_args:
-    run_name: str
     num_factor: int
     normalize: bool = True
     select_feature: bool = True
