@@ -3,23 +3,31 @@ log_level: "INFO"
 # config.yaml
 training:
   num_epochs: 20
-  lr: 0.0002
+  lr: 0.0001
   val_interval: 1
   seed: 42
-  run_name: "increaseLR"
+  run_name: "CosineStep"
   save_dir: "./best_models"
   device: null  # Will be auto-set to 'cuda' or 'cpu'
   # Optional (defaults: adam + cosine_step over all training steps, same as before)
   optimizer:
     name: adamw
-    weight_decay: 0.01
+    weight_decay: 0.0001
   scheduler:
-    name: reduce_on_plateau
-    monitor: val_loss
-    mode: min
-    factor: 0.5
-    patience: 3
+    name: cosine_step
+#  scheduler:
+#    name: reduce_on_plateau
+#    monitor: val_loss
+#    mode: min
+#    factor: 0.5
+#    patience: 3
   # Other schedulers: name cosine_epoch (T_max defaults to num_epochs); name none
+
+#model:
+#  num_latent: 158
+#  num_portfolio: 20
+#  num_factor: 8
+#  hidden_size: 32
 
 model:
   num_latent: 158
@@ -28,16 +36,17 @@ model:
   hidden_size: 64
 
 
+
 data:
-  dataset: "US" # US (US is just US, i mean USA, okay) or CN (china)
+  dataset: "CN" # US (US is just US, i mean USA, okay) or CN (china)
   seq_len: 20
   num_workers: 2
   fit_start_time: "2009-01-01"
   fit_end_time: "2017-12-31"
   val_start_time: "2018-01-01"
   val_end_time: "2018-12-31"
-  test_start_time: "2018-01-01"
-  test_end_time: "2018-06-30"
+  test_start_time: "2019-01-01"
+  test_end_time: "2020-12-31"
   select_feature: null  # optional column subset for loaders
 
 mlflow:
@@ -47,7 +56,7 @@ mlflow:
 
 test:
   model_dir: "./best_models"
-  model_name: "VAE-Revision2_factor_32_hdn_64_port_128_seed_42.pt" 
+  model_name: "increaseLR_factor_32_hdn_64_port_128_seed_42.pt" 
 
 # Optional: Add overrides for different environments (e.g., dev/prod)
 # dev:

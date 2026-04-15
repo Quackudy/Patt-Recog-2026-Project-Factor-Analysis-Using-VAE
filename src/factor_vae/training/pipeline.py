@@ -59,8 +59,10 @@ def run_training(config: Mapping, *, logger: logging.Logger | None = None) -> No
 
     if dataset_type == "US":
         path = "data/processed/sp500_data.pkl"
+        log.info("Loading US data")
     elif dataset_type == "CN":
         path = "data/processed/csi_data.pkl"
+        log.info("Loading CN data")
     else:
          raise ValueError(f"Invalid dataset type: {dataset_type}. Expected 'US' or 'CN'.")
 
@@ -112,21 +114,21 @@ def run_training(config: Mapping, *, logger: logging.Logger | None = None) -> No
             steps_per_epoch=steps_per_epoch,
         )
 
-        log.info("Measuring data loading speed...")
-        bench_start = time.time()
-        num_batches = 0
-        for i, (batch, _) in enumerate(train_dataloader):
-            num_batches += 1
-            if i == 49:
-                break
-        avg_time = (time.time() - bench_start) / num_batches
-        est_epoch_min = (avg_time * len(train_dataloader)) / 60
-        log.info("Average time to load one batch: %.4f seconds", avg_time)
-        log.info(
-            "Estimated time for one full epoch (%d batches): %.2f minutes",
-            len(train_dataloader),
-            est_epoch_min,
-        )
+#        log.info("Measuring data loading speed...")
+#        bench_start = time.time()
+#        num_batches = 0
+#        for i, (batch, _) in enumerate(train_dataloader):
+#            num_batches += 1
+#            if i == 49:
+#                break
+#        avg_time = (time.time() - bench_start) / num_batches
+#        est_epoch_min = (avg_time * len(train_dataloader)) / 60
+#        log.info("Average time to load one batch: %.4f seconds", avg_time)
+#        log.info(
+#            "Estimated time for one full epoch (%d batches): %.2f minutes",
+#            len(train_dataloader),
+#            est_epoch_min,
+#        )
 
         with mlflow.start_run(run_name=training["run_name"]):
             mlflow.log_params(
@@ -148,7 +150,6 @@ def run_training(config: Mapping, *, logger: logging.Logger | None = None) -> No
                     "val_end_time": data_cfg["val_end_time"],
                     "dataset": data_cfg["dataset"],
                     "device": str(device),
-                    "est_epoch_min": round(est_epoch_min, 2),
                 }
             )
 

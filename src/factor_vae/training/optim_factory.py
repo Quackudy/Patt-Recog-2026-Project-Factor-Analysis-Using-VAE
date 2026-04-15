@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from typing import Any
+from factor_vae.logging_config import configure_colored_logging
 
 import torch
 from torch.optim import Optimizer
@@ -16,6 +17,8 @@ _OPTIMIZER_CLASSES: dict[str, type[Optimizer]] = {
     "sgd": torch.optim.SGD,
 }
 
+log = configure_colored_logging()
+
 
 def build_optimizer(model: torch.nn.Module, training: Mapping[str, Any]) -> Optimizer:
     cfg = dict(training.get("optimizer") or {})
@@ -23,6 +26,7 @@ def build_optimizer(model: torch.nn.Module, training: Mapping[str, Any]) -> Opti
     if name not in _OPTIMIZER_CLASSES:
         raise ValueError(f"Unknown optimizer {name!r}; choose from {sorted(_OPTIMIZER_CLASSES)}")
     cls = _OPTIMIZER_CLASSES[name]
+    log.info(f"{name} optimizer chosen")
     cfg.setdefault("lr", training["lr"])
     return cls(model.parameters(), **cfg)
 
@@ -64,9 +68,11 @@ def build_lr_schedule(
     name = str(cfg.pop("name", "cosine_step")).lower()
 
     if name == "none":
+        log.info("No LR scheduler chosen!")
         return LRScheduleHooks()
 
     if name == "cosine_step":
+        log.info("Consine_step Schdeuler chosen")
         t_max = int(cfg.pop("T_max", num_epochs * steps_per_epoch))
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=t_max, **cfg)
 
@@ -76,6 +82,8 @@ def build_lr_schedule(
         return LRScheduleHooks(_batch_step=batch_step)
 
     if name == "cosine_epoch":
+        
+        log.info("Consine_epoch Schdeuler chosen")
         t_max = int(cfg.pop("T_max", num_epochs))
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=t_max, **cfg)
 
@@ -85,6 +93,8 @@ def build_lr_schedule(
         return LRScheduleHooks(_epoch_step=epoch_step)
 
     if name == "reduce_on_plateau":
+        
+        log.info("Reduce_on_plateau Schdeuler chosen")
         monitor = str(cfg.pop("monitor", "val_loss"))
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, **cfg)
 
