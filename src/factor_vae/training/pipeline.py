@@ -72,7 +72,25 @@ def run_training(config: Mapping, *, logger: logging.Logger | None = None) -> No
             "Make sure you ran the Qlib data generation script first!"
         )
 
-    dataset = pd.read_pickle(path).iloc[:, :159]
+    dataset = pd.read_pickle(path)
+    
+    # Handle feature selection
+    select_feature = data_cfg.get("select_feature")
+    if select_feature == "top_20":
+        top_20_path = "top_20_features.txt"
+        if os.path.exists(top_20_path):
+            with open(top_20_path, "r") as f:
+                top_20_features = [line.strip() for line in f.readlines()]
+            # Ensure label column is included
+            label_col = dataset.columns[-1]
+            dataset = dataset[top_20_features + [label_col]]
+            log.info("Selected top 20 features: %s", top_20_features)
+            # Update num_latent in model_cfg if it's set to automatic or just ensure it matches
+            model_cfg["num_latent"] = 20
+        else:
+            log.warning("top_20_features.txt not found. Using all features.")
+    else:
+        dataset = dataset.iloc[:, :159] # Default behavior
 
     dataset.rename(columns={dataset.columns[-1]: "LABEL0"}, inplace=True)
 
@@ -83,7 +101,7 @@ def run_training(config: Mapping, *, logger: logging.Logger | None = None) -> No
         start=data_cfg["fit_start_time"],
         end=data_cfg["fit_end_time"],
         num_workers=data_cfg["num_workers"],
-        select_feature=data_cfg.get("select_feature"),
+        select_feature=None, # Already selected above
     )
 
     valid_dataloader = init_data_loader(
@@ -93,7 +111,7 @@ def run_training(config: Mapping, *, logger: logging.Logger | None = None) -> No
         start=data_cfg["val_start_time"],
         end=data_cfg["val_end_time"],
         num_workers=0,
-        select_feature=data_cfg.get("select_feature"),
+        select_feature=None, # Already selected above
     )
 
     train_ds = train_dataloader.dataset
@@ -154,12 +172,16 @@ def run_training(config: Mapping, *, logger: logging.Logger | None = None) -> No
             )
 
             for epoch in tqdm(range(training["num_epochs"])):
+                # KL annealing: linear increase from 0 to 1 over half of the epochs
+                kl_weight = min(1.0, epoch / (training["num_epochs"] // 2)) if training.get("kl_annealing", False) else 1.0
+                
                 train_loss = train(
                     model,
                     train_dataloader,
                     optimizer,
                     device,
                     after_optimizer_step=lr_hooks.after_optimizer_step,
+                    kl_weight=kl_weight,
                 )
                 mlflow.log_metric("train_loss", train_loss, step=epoch + 1)
 

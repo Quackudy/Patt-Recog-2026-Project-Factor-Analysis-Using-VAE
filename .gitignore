@@ -56,3 +56,6 @@ notebooks/_graph_out/
 # Optional user settings
 *.env
 *.local
+
+*.txt
+*.pdf

@@ -63,7 +63,24 @@ def run_evaluation(
             "Make sure you ran the Qlib data generation script first!"
         )
 
-    dataset = pd.read_pickle(path).iloc[:, :159]
+    dataset = pd.read_pickle(path)
+    
+    # Handle feature selection
+    select_feature = data_cfg.get("select_feature")
+    if select_feature == "top_20":
+        top_20_path = "top_20_features.txt"
+        if os.path.exists(top_20_path):
+            with open(top_20_path, "r") as f:
+                top_20_features = [line.strip() for line in f.readlines()]
+            # Ensure label column is included
+            label_col = dataset.columns[-1]
+            dataset = dataset[top_20_features + [label_col]]
+            log.info("Selected top 20 features for evaluation: %s", top_20_features)
+        else:
+            log.warning("top_20_features.txt not found. Using first 158 features.")
+            dataset = dataset.iloc[:, :159]
+    else:
+        dataset = dataset.iloc[:, :159]
 
     dataset.rename(columns={dataset.columns[-1]: "LABEL0"}, inplace=True)
 
@@ -74,7 +91,7 @@ def run_evaluation(
         step_len=seq_len,
         start=data_cfg["test_start_time"],
         end=data_cfg["test_end_time"],
-        select_feature=data_cfg.get("select_feature"),
+        select_feature=None, # Already selected above
     )
 
     test_ds = test_dataloader.dataset

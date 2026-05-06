@@ -249,7 +249,7 @@ class FactorVAE(nn.Module):
                      (target - mu)**2 / (sigma**2 + 1e-6))
         return nll.mean()
 
-    def forward(self, x, returns):
+    def forward(self, x, returns, kl_weight=1.0):
         # x: (batch_size, seq_length, num_latent)
         # returns: (batch_size, 1)
 
@@ -269,7 +269,9 @@ class FactorVAE(nn.Module):
             pred_sigma[pred_sigma == 0] = 1e-6
         kl_divergence = self.KL_Divergence(factor_mu, factor_sigma, pred_mu, pred_sigma)
 
-        vae_loss = reconstruction_loss + kl_divergence
+        # Scale KL by 1/N to balance with averaged reconstruction NLL
+        batch_size = returns.size(0)
+        vae_loss = reconstruction_loss + kl_weight * (kl_divergence / batch_size)
         return vae_loss, rec_mu, factor_mu, factor_sigma, pred_mu, pred_sigma
 
     def prediction(self, x):

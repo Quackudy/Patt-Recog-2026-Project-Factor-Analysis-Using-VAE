@@ -11,6 +11,7 @@ def train(
     device,
     *,
     after_optimizer_step: Callable[[], None] | None = None,
+    kl_weight: float = 1.0,
 ):
     factor_model.to(device)
     factor_model.train()
@@ -27,7 +28,7 @@ def train(
 
             optimizer.zero_grad()
             loss, reconstruction, factor_mu, factor_sigma, pred_mu, pred_sigma = factor_model(
-                inputs, labels
+                inputs, labels, kl_weight=kl_weight
             )
             total_loss += loss.item()
             loss.backward()
