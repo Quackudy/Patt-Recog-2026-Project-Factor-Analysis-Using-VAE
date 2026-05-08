@@ -3,16 +3,18 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class FeatureExtractor(nn.Module):
-    def __init__(self, num_latent, hidden_size, num_layers=1):
+    def __init__(self, num_latent, hidden_size, num_layers=1, dropout=0.0):
         super(FeatureExtractor, self).__init__()
         self.num_latent = num_latent
         self.hidden_size = hidden_size
         self.num_layers = num_layers
+        self.dropout_prob = dropout
         
         self.normalize = nn.LayerNorm(num_latent)
         self.linear = nn.Linear(num_latent, num_latent)
         self.leakyrelu = nn.LeakyReLU()
-        self.gru = nn.GRU(num_latent, hidden_size, num_layers, batch_first=True)
+        self.gru = nn.GRU(num_latent, hidden_size, num_layers, batch_first=True, dropout=dropout if num_layers > 1 else 0)
+        self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
         # x : (batch_size, seq_length, num_latent)
@@ -20,6 +22,7 @@ class FeatureExtractor(nn.Module):
         x = self.normalize(x)
         out = self.linear(x)
         out = self.leakyrelu(out)
+        out = self.dropout(out)
 
         stock_latent, _ = self.gru(out)
         return stock_latent[:,-1,:] # (batch_size, hidden_size)
@@ -56,10 +59,11 @@ class FactorEncoder(nn.Module):
         return self.mapping_layer(portfolio_return)
 
 class AlphaLayer(nn.Module):
-    def __init__(self, hidden_size):
+    def __init__(self, hidden_size, dropout=0.0):
         super(AlphaLayer, self).__init__()
         self.linear1 = nn.Linear(hidden_size, hidden_size)
         self.leakyrelu = nn.LeakyReLU()
+        self.dropout = nn.Dropout(dropout)
         self.mu_layer = nn.Linear(hidden_size, 1)
         self.sigma_layer = nn.Linear(hidden_size, 1)
         self.softplus = nn.Softplus()
@@ -67,6 +71,7 @@ class AlphaLayer(nn.Module):
     def forward(self, stock_latent):
         stock_latent = self.linear1(stock_latent)
         stock_latent = self.leakyrelu(stock_latent)
+        stock_latent = self.dropout(stock_latent)
         alpha_mu = self.mu_layer(stock_latent)
         alpha_sigma = self.sigma_layer(stock_latent)
         return alpha_mu, self.softplus(alpha_sigma)
@@ -110,13 +115,13 @@ class FactorDecoder(nn.Module):
         return mu, sigma
 
 class AttentionLayer(nn.Module):
-    def __init__(self, hidden_size):
+    def __init__(self, hidden_size, dropout=0.1):
         super(AttentionLayer, self).__init__()
 
         self.query = nn.Parameter(torch.randn(hidden_size))
         self.key_layer = nn.Linear(hidden_size, hidden_size)
         self.value_layer = nn.Linear(hidden_size, hidden_size)
-        self.dropout = nn.Dropout(0.1)
+        self.dropout = nn.Dropout(dropout)
 
         self.capture_attention = False
         self._last_attention_weights: torch.Tensor | None = None
@@ -144,15 +149,16 @@ class AttentionLayer(nn.Module):
         return context_vector
 
 class FactorPredictor(nn.Module):
-    def __init__(self, hidden_size, num_factor):
+    def __init__(self, hidden_size, num_factor, dropout=0.1):
         super(FactorPredictor, self).__init__()
         
         self.hidden_size = hidden_size
         self.num_factor = num_factor
-        self.attention_layers = nn.ModuleList([AttentionLayer(self.hidden_size) for _ in range(num_factor)])
+        self.attention_layers = nn.ModuleList([AttentionLayer(self.hidden_size, dropout=dropout) for _ in range(num_factor)])
         
         self.linear = nn.Linear(hidden_size, hidden_size)
         self.leakyrelu = nn.LeakyReLU()
+        self.dropout = nn.Dropout(dropout)
         self.mu_layer = nn.Linear(hidden_size, 1)
         self.sigma_layer = nn.Linear(hidden_size, 1)
         self.softplus = nn.Softplus()

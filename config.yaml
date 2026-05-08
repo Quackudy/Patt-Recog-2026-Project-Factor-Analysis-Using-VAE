@@ -4,9 +4,9 @@ log_level: "INFO"
 training:
   num_epochs: 25
   lr: 0.0002
-  val_interval: 2
+  val_interval: 1
   seed: 42
-  run_name: "Final_F96_H192_E25"
+  run_name: "Run4_H384_D2_Plateau"
   save_dir: "./best_models"
   device: null
   kl_annealing: true
@@ -14,13 +14,18 @@ training:
     name: adamw
     weight_decay: 0.0001
   scheduler:
-    name: cosine_step
+    name: reduce_on_plateau
+    monitor: val_loss
+    patience: 3
+    factor: 0.5
 
 model:
   num_latent: 158
   num_portfolio: 128
-  num_factor: 96
-  hidden_size: 192
+  num_factor: 128
+  hidden_size: 384
+  dropout: 0.2
+  gru_layers: 2
 
 data:
   dataset: "CN"
@@ -41,7 +46,7 @@ mlflow:
 
 test:
   model_dir: "./best_models"
-  model_name: "Final_F96_H192_E25_factor_96_hdn_192_port_128_seed_42.pt" 
+  model_name: "Overnight_HighCapacity_factor_128_hdn_256_port_128_seed_42.pt" 
 
 # Optional: Add overrides for different environments (e.g., dev/prod)
 # dev:
